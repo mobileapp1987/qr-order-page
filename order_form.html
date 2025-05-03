@@ -1,44 +1,116 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Place Order</title>
+  <title>QR Order Page</title>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    input, select, button { display: block; margin: 10px 0; padding: 8px; width: 100%; max-width: 400px; }
+    .product-card {
+      border: 1px solid #ccc;
+      padding: 8px;
+      margin: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .cart-button {
+      background-color: green;
+      color: white;
+      padding: 4px 10px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
-  <h2>Place Your Order</h2>
-  <form onsubmit="handleSubmit(event)">
-    <label for="name">Your Name</label>
-    <input type="text" id="name" placeholder="Enter your name" required>
+  <h2>Daftar Produk</h2>
+  <div id="product-list"></div>
 
-    <label for="product">Select Product</label>
-    <select id="product">
-      <option value="Coffee">Coffee</option>
-      <option value="Tea">Tea</option>
-      <option value="Sandwich">Sandwich</option>
-    </select>
+  <h3>Keranjang</h3>
+  <ul id="cart-list"></ul>
+  <p><strong>Total: Rp <span id="total-price">0</span></strong></p>
 
-    <label for="qty">Quantity</label>
-    <input type="number" id="qty" value="1" min="1" required>
-
-    <button type="submit">Submit Order</button>
+  <h3>Form Pemesanan</h3>
+  <form id="order-form">
+    <input type="text" id="customerName" placeholder="Nama pelanggan" required /><br /><br />
+    <button type="submit">Kirim Pesanan</button>
   </form>
 
-  <p id="result" style="color: green;"></p>
-
   <script>
-    function handleSubmit(event) {
-      event.preventDefault();
-      const name = document.getElementById('name').value;
-      const product = document.getElementById('product').value;
-      const qty = document.getElementById('qty').value;
+    const firebaseConfig = {
+      apiKey: "AIzaSyAiMagGCZhAiwW8SiYKQvLZ0o4k2_M1QhY", // Ganti sesuai Firebase project kamu
+      authDomain: "cashier-app-10e34.firebaseapp.com",
+      projectId: "cashier-app-10e34"
+    };
 
-      document.getElementById('result').textContent =
-        `Thank you ${name}, your order for ${qty} ${product}(s) has been received!`;
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const cart = [];
+    let total = 0;
+
+    const productListEl = document.getElementById("product-list");
+    const cartListEl = document.getElementById("cart-list");
+    const totalPriceEl = document.getElementById("total-price");
+
+    // Menampilkan produk dari Firestore
+    db.collection("products").get().then(snapshot => {
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const div = document.createElement("div");
+        div.className = "product-card";
+
+        div.innerHTML = `
+          <span>${data.name} - Rp ${data.price}</span>
+          <button class="cart-button">🛒</button>
+        `;
+
+        div.querySelector(".cart-button").addEventListener("click", () => {
+          cart.push({ name: data.name, price: data.price });
+          total += data.price;
+
+          updateCartUI();
+        });
+
+        productListEl.appendChild(div);
+      });
+    });
+
+    function updateCartUI() {
+      cartListEl.innerHTML = '';
+      cart.forEach(item => {
+        const li = document.createElement("li");
+        li.textContent = `${item.name} - Rp ${item.price}`;
+        cartListEl.appendChild(li);
+      });
+      totalPriceEl.textContent = total;
     }
+
+    // Submit pesanan
+    const form = document.getElementById("order-form");
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const name = document.getElementById("customerName").value;
+      if (cart.length === 0) {
+        alert("Keranjang kosong!");
+        return;
+      }
+
+      db.collection("orders").add({
+        customerName: name,
+        items: cart,
+        total: total,
+        timestamp: new Date()
+      }).then(() => {
+        alert("Pesanan berhasil dikirim!");
+
+        // Reset
+        cart.length = 0;
+        total = 0;
+        updateCartUI();
+        form.reset();
+      });
+    });
   </script>
 </body>
 </html>
