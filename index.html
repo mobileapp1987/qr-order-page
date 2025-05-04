@@ -27,7 +27,7 @@
 
   <h3>Keranjang</h3>
   <ul id="cart-list"></ul>
-  <p><strong>Total: Rp <span id="total-price">0</span></strong></p>
+  <p><strong>Total: $ <span id="total-price">0</span></strong></p>
 
   <h3>Form Pemesanan</h3>
   <form id="order-form">
@@ -60,7 +60,7 @@
         div.className = "product-card";
 
         div.innerHTML = `
-          <span>${data.name} - Rp ${data.price}</span>
+          <span>${data.name} - $ ${data.price}</span>
           <button class="cart-button">🛒</button>
         `;
 
@@ -79,7 +79,7 @@
       cartListEl.innerHTML = '';
       cart.forEach(item => {
         const li = document.createElement("li");
-        li.textContent = `${item.name} - Rp ${item.price}`;
+        li.textContent = `${item.name} - $ ${item.price}`;
         cartListEl.appendChild(li);
       });
       totalPriceEl.textContent = total;
